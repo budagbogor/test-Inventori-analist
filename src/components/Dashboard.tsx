@@ -196,7 +196,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="flex justify-between items-end mb-6 border-b border-gray-200 pb-4 pt-6 px-8 max-w-7xl mx-auto w-full">
         <div>
-          <h1 className="text-2xl font-light tracking-tight">Inventory <span className="font-semibold">AI Analyst</span></h1>
+          <h1 className="text-2xl font-light tracking-tight">Aplikasi <span className="font-semibold">Pak Sutrisno</span></h1>
           <p className="text-gray-500 text-sm mt-1">Sistem Cerdas Penganalisa Monitoring Stock Harian (MSH)</p>
         </div>
         {data.length > 0 && (
