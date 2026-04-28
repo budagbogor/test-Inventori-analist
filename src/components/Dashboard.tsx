@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import Papa from 'papaparse';
-import { Upload, FileType, Play, Loader2, AlertCircle, TrendingDown, TrendingUp, Package, Truck } from 'lucide-react';
+import { Upload, FileType, Play, Loader2, AlertCircle, TrendingDown, TrendingUp, Package, Truck, Settings } from 'lucide-react';
 import { InventoryRow, AnalysisSummary } from '../types';
 import { generateMockData } from '../lib/mockData';
 import { getGeminiInsights } from '../services/geminiService';
@@ -25,6 +25,26 @@ export default function Dashboard() {
   const [slowMoving, setSlowMoving] = useState<InventoryRow[]>([]);
   const [lossSales, setLossSales] = useState<InventoryRow[]>([]);
   const [decliningItems, setDecliningItems] = useState<TrendRow[]>([]);
+
+  // Settings
+  const [userApiKey, setUserApiKey] = useState<string>(() => localStorage.getItem('user_gemini_api_key') || '');
+  const [showSettings, setShowSettings] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
+
+  const openSettings = () => {
+    setTempApiKey(userApiKey);
+    setShowSettings(true);
+  };
+
+  const saveSettings = () => {
+    setUserApiKey(tempApiKey);
+    if (tempApiKey) {
+      localStorage.setItem('user_gemini_api_key', tempApiKey);
+    } else {
+      localStorage.removeItem('user_gemini_api_key');
+    }
+    setShowSettings(false);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -163,7 +183,7 @@ export default function Dashboard() {
     // AI Analysis (Points 4 & 5)
     setAnalyzing(true);
     try {
-      const aiResponse = await getGeminiInsights(calculatedSummary, slow, loss, declining.map(d => ({ SKU: d.SKU, Deskripsi: d.Deskripsi, TrendPercent: d.TrendPercent })));
+      const aiResponse = await getGeminiInsights(calculatedSummary, slow, loss, declining.map(d => ({ SKU: d.SKU, Deskripsi: d.Deskripsi, TrendPercent: d.TrendPercent })), userApiKey);
       setInsights(aiResponse);
     } catch (err: any) {
       setError(err.message || "Gagal mendapatkan insight AI. Pastikan GEMINI_API_KEY terkonfigurasi.");
@@ -199,15 +219,57 @@ export default function Dashboard() {
           <h1 className="text-2xl font-light tracking-tight">Aplikasi <span className="font-semibold">Pak Sutrisno</span></h1>
           <p className="text-gray-500 text-sm mt-1">Sistem Cerdas Penganalisa Monitoring Stock Harian (MSH)</p>
         </div>
-        {data.length > 0 && (
-          <button 
-            onClick={resetData}
-            className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A] hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors"
+        <div className="flex items-center gap-3">
+          <button
+            onClick={openSettings}
+            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
+            title="Pengaturan"
           >
-            Upload Baru
+            <Settings className="w-5 h-5" />
           </button>
-        )}
+          {data.length > 0 && (
+            <button 
+              onClick={resetData}
+              className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A] hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors cursor-pointer"
+            >
+              Upload Baru
+            </button>
+          )}
+        </div>
       </header>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-semibold mb-2">Pengaturan API Key</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Masukkan Gemini API Key Anda secara manual. Key ini akan disimpan lokal di browser Anda dan hanya berlaku untuk sesi Anda (tidak global).
+            </p>
+            <input
+              type="password"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-6 focus:ring-2 focus:ring-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none"
+              placeholder="AIzaSy..."
+              value={tempApiKey}
+              onChange={(e) => setTempApiKey(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={saveSettings}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-[#1A1A1A] text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-8 flex-grow w-full">
         {error && (

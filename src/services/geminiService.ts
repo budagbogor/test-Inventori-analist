@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { InventoryRow, AnalysisSummary } from '../types';
 
 let genAI: GoogleGenAI | null = null;
+let currentApiKey: string | null = null;
 
 export interface TrendRowBase {
   SKU: string;
@@ -13,15 +14,18 @@ export const getGeminiInsights = async (
   summary: AnalysisSummary,
   slowMoving: InventoryRow[],
   lossSales: InventoryRow[],
-  declining: TrendRowBase[]
+  declining: TrendRowBase[],
+  customApiKey?: string
 ): Promise<string> => {
-  if (!genAI) {
-    // Process.env injection from VITE config
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is missing. Please configure it in AI Studio Secrets.');
-    }
+  const apiKey = customApiKey || process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is missing. Please configure it in AI Studio Secrets or set it manually in Pengaturan.');
+  }
+
+  if (!genAI || currentApiKey !== apiKey) {
     genAI = new GoogleGenAI({ apiKey });
+    currentApiKey = apiKey;
   }
 
   const prompt = `Anda adalah Ahli Analis Inventory otomotif dan Supply Chain berpengalaman.
